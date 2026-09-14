@@ -37,6 +37,7 @@ Example:
 			Host:     cfg.AMX.Host,
 			Timeout:  cfg.AMX.Timeout,
 			Insecure: cfg.AMX.Insecure,
+			Headers:  cfg.AMX.Headers,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to create AMX client: %w", err)

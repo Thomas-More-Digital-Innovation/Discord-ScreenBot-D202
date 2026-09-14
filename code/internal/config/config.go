@@ -28,9 +28,10 @@ type DiscordConfig struct {
 
 // AMXConfig contains connection settings for the AMX matrix switcher.
 type AMXConfig struct {
-	Host     string        `mapstructure:"host"`
-	Timeout  time.Duration `mapstructure:"timeout"`
-	Insecure bool          `mapstructure:"insecure"`
+	Host     string            `mapstructure:"host"`
+	Timeout  time.Duration     `mapstructure:"timeout"`
+	Insecure bool              `mapstructure:"insecure"`
+	Headers  map[string]string `mapstructure:"headers"`
 }
 
 // MappingConfig maps user-friendly names to numeric matrix channels.

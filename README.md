@@ -45,6 +45,20 @@ A Discord bot and CLI utility written in Go (using [Cobra](https://github.com/sp
 
 Copy `code/config.example.yaml` to `code/config.yaml`:
 
+### Cloudflare Access / Reverse Proxy Authentication
+
+If the AMX switcher is protected behind **Cloudflare Zero Trust / Cloudflare Access** (e.g. `https://amx.digitalinnovation.be`):
+1. In Cloudflare Zero Trust: create a **Service Token** (Access -> Service Auth -> Service Tokens) and assign it to the application's policy.
+2. In `config.yaml`, add the service token headers:
+   ```yaml
+   amx:
+     host: "https://amx.digitalinnovation.be"
+     headers:
+       CF-Access-Client-Id: "YOUR_SERVICE_TOKEN_CLIENT_ID"
+       CF-Access-Client-Secret: "YOUR_SERVICE_TOKEN_CLIENT_SECRET"
+   ```
+   *(Alternatively, for quick temporary testing, you can pass your browser's `Cookie: "CF_Authorization=..."`)*.
+
 ### Environment Variable Overrides
 
 Configuration settings can also be set via environment variables:

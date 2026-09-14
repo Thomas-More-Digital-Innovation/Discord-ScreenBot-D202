@@ -21,10 +21,11 @@ type Client interface {
 
 // Config holds connection parameters for the AMX switcher.
 type Config struct {
-	Host       string
-	Timeout    time.Duration
-	Insecure   bool
-	UserAgent  string
+	Host      string
+	Timeout   time.Duration
+	Insecure  bool
+	UserAgent string
+	Headers   map[string]string
 }
 
 type client struct {
@@ -33,6 +34,7 @@ type client struct {
 	origin     string
 	referer    string
 	userAgent  string
+	headers    map[string]string
 }
 
 const (
@@ -87,6 +89,7 @@ func NewClient(cfg Config) (Client, error) {
 		origin:     origin,
 		referer:    referer,
 		userAgent:  ua,
+		headers:    cfg.Headers,
 	}, nil
 }
 
@@ -137,6 +140,11 @@ func (c *client) SwitchVideo(ctx context.Context, output int, input int) error {
 	req.Header.Set("User-Agent", c.userAgent)
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
+	// Apply any user-configured custom headers (e.g. Cloudflare Access service tokens, cookies, auth)
+	for k, v := range c.headers {
+		req.Header.Set(k, v)
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to communicate with AMX switcher at %s: %w", reqURL, err)
@@ -159,6 +167,10 @@ func (c *client) Ping(ctx context.Context) error {
 		return fmt.Errorf("failed to create ping request: %w", err)
 	}
 	req.Header.Set("User-Agent", c.userAgent)
+
+	for k, v := range c.headers {
+		req.Header.Set(k, v)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

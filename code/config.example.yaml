@@ -25,6 +25,12 @@ amx:
   # Set true if connecting over HTTPS with self-signed certificate
   insecure: true
 
+  # Optional: Custom headers (e.g. for Cloudflare Access Zero Trust or reverse proxies)
+  # headers:
+  #   CF-Access-Client-Id: "YOUR_SERVICE_TOKEN_CLIENT_ID"
+  #   CF-Access-Client-Secret: "YOUR_SERVICE_TOKEN_CLIENT_SECRET"
+  #   Cookie: "CF_Authorization=..."
+
 mapping:
   # Outputs: friendly alias -> AMX matrix output port (1..4)
   outputs:
