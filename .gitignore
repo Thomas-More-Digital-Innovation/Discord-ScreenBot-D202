@@ -1,0 +1,19 @@
+# Binaries
+code/screenbot
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Local configuration files containing secret tokens
+config.yaml
+code/config.yaml
+*.env
+
+# IDE / OS files
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store

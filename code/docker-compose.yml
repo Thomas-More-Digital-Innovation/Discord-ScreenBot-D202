@@ -1,0 +1,13 @@
+services:
+  screenbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: discord-screenbot
+    restart: unless-stopped
+    volumes:
+      - ./config.yaml:/etc/screenbot/config.yaml:ro
+    environment:
+      - TZ=UTC
+    # If the AMX matrixer is on the local host network:
+    # network_mode: host

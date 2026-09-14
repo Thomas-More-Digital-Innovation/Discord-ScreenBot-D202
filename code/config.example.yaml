@@ -1,0 +1,47 @@
+# Discord ScreenBot Configuration for AMX DVX-3150HD-SP
+discord:
+  # Your Discord Bot Token (obtain from https://discord.com/developers/applications)
+  # Can also be provided via environment variable DISCORD_TOKEN or SCREENBOT_DISCORD_TOKEN
+  token: ""
+
+  # Optional: Application/Client ID (auto-detected from token if empty)
+  app_id: ""
+
+  # Optional: Guild ID for instant slash command registration.
+  # If left blank, commands are registered globally (takes up to ~1 hour to propagate across Discord).
+  guild_id: ""
+
+  # Optional: Restrict bot commands to a single channel ID (e.g. #screen-control).
+  # If set, commands sent in other channels will be silently ignored.
+  channel_id: ""
+
+amx:
+  # The IP address or hostname of your AMX DVX-3150HD-SP switcher
+  host: "http://192.168.1.73"
+
+  # HTTP request timeout
+  timeout: "5s"
+
+  # Set true if connecting over HTTPS with self-signed certificate
+  insecure: true
+
+mapping:
+  # Outputs: friendly alias -> AMX matrix output port (1..4)
+  outputs:
+    output1: 1
+    output2: 2
+    output3: 3
+    output4: 4
+
+  # Inputs: friendly alias -> AMX matrix input port (1..10)
+  inputs:
+    input1: 1
+    input2: 2
+    input3: 3
+    input4: 4
+    input5: 5
+    input6: 6
+    input7: 7
+    input8: 8
+    input9: 9
+    input10: 10
