@@ -57,6 +57,7 @@ func DefaultConfig() *Config {
 		},
 		Mapping: MappingConfig{
 			Outputs: map[string]int{
+				"all":     0,
 				"screena": 1,
 				"screenb": 2,
 				"output1": 1,
@@ -149,16 +150,66 @@ func NormalizeKey(s string) string {
 	return s
 }
 
+// IsAllOutput checks whether a given output identifier refers to all outputs.
+func (c *Config) IsAllOutput(raw string) bool {
+	norm := NormalizeKey(raw)
+	if norm == "all" || norm == "allscreens" || norm == "alloutputs" || norm == "allports" {
+		return true
+	}
+	for alias, id := range c.Mapping.Outputs {
+		if NormalizeKey(alias) == norm && id <= 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// GetAllOutputPorts returns a sorted list of unique physical output ports configured.
+func (c *Config) GetAllOutputPorts() []int {
+	portMap := make(map[int]bool)
+	for _, port := range c.Mapping.Outputs {
+		if port > 0 {
+			portMap[port] = true
+		}
+	}
+	if len(portMap) == 0 {
+		return []int{1, 2, 3, 4}
+	}
+	ports := make([]int, 0, len(portMap))
+	for p := range portMap {
+		ports = append(ports, p)
+	}
+	sort.Ints(ports)
+	return ports
+}
+
+// FormatOutputPorts formats a list of ports as a comma-separated string.
+func (c *Config) FormatOutputPorts(ports []int) string {
+	strs := make([]string, len(ports))
+	for i, p := range ports {
+		strs[i] = strconv.Itoa(p)
+	}
+	return strings.Join(strs, ", ")
+}
+
 // ResolveOutput maps a user string (alias or number) to an output channel ID.
+// If "all" is specified, it returns 0 and "All Outputs".
 func (c *Config) ResolveOutput(raw string) (int, string, error) {
 	norm := NormalizeKey(raw)
 	if norm == "" {
 		return 0, "", fmt.Errorf("output cannot be empty")
 	}
 
+	if c.IsAllOutput(norm) {
+		return 0, "All Outputs", nil
+	}
+
 	// Check mapping
 	for alias, id := range c.Mapping.Outputs {
 		if NormalizeKey(alias) == norm {
+			if id <= 0 {
+				return 0, "All Outputs", nil
+			}
 			return id, alias, nil
 		}
 	}
@@ -179,6 +230,29 @@ func (c *Config) ResolveOutput(raw string) (int, string, error) {
 	}
 
 	return 0, "", fmt.Errorf("unknown output %q. Available: %s", raw, strings.Join(c.GetOutputNames(), ", "))
+}
+
+// ResolveOutputs maps a user string (alias, number, or "all") to one or more output channel IDs.
+func (c *Config) ResolveOutputs(raw string) ([]int, string, error) {
+	norm := NormalizeKey(raw)
+	if norm == "" {
+		return nil, "", fmt.Errorf("output cannot be empty")
+	}
+
+	if c.IsAllOutput(norm) {
+		ports := c.GetAllOutputPorts()
+		return ports, "All Outputs", nil
+	}
+
+	id, name, err := c.ResolveOutput(raw)
+	if err != nil {
+		return nil, "", err
+	}
+	if id <= 0 {
+		ports := c.GetAllOutputPorts()
+		return ports, "All Outputs", nil
+	}
+	return []int{id}, name, nil
 }
 
 // ResolveInput maps a user string (alias or number) to an input channel ID.
@@ -213,11 +287,18 @@ func (c *Config) ResolveInput(raw string) (int, string, error) {
 	return 0, "", fmt.Errorf("unknown input %q. Available: %s", raw, strings.Join(c.GetInputNames(), ", "))
 }
 
-// GetOutputNames returns a sorted list of configured output aliases.
+// GetOutputNames returns a sorted list of configured output aliases, including "all".
 func (c *Config) GetOutputNames() []string {
-	names := make([]string, 0, len(c.Mapping.Outputs))
+	names := make([]string, 0, len(c.Mapping.Outputs)+1)
+	hasAll := false
 	for k := range c.Mapping.Outputs {
+		if NormalizeKey(k) == "all" {
+			hasAll = true
+		}
 		names = append(names, k)
+	}
+	if !hasAll {
+		names = append(names, "all")
 	}
 	sort.Strings(names)
 	return names
@@ -239,11 +320,21 @@ func (c *Config) GetOutputChoices() []Choice {
 	if len(names) > 25 {
 		names = names[:25]
 	}
+	allPorts := c.GetAllOutputPorts()
+	allPortsStr := c.FormatOutputPorts(allPorts)
+
 	choices := make([]Choice, len(names))
 	for i, n := range names {
-		choices[i] = Choice{
-			Name:  fmt.Sprintf("%s (Port %d)", n, c.Mapping.Outputs[n]),
-			Value: n,
+		if c.IsAllOutput(n) {
+			choices[i] = Choice{
+				Name:  fmt.Sprintf("%s (All Ports: %s)", n, allPortsStr),
+				Value: n,
+			}
+		} else {
+			choices[i] = Choice{
+				Name:  fmt.Sprintf("%s (Port %d)", n, c.Mapping.Outputs[n]),
+				Value: n,
+			}
 		}
 	}
 	return choices

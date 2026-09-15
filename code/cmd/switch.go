@@ -13,17 +13,18 @@ var switchCmd = &cobra.Command{
 	Use:   "switch <screen/output> <input>",
 	Short: "Switch an output to an input on the AMX matrixer directly from CLI",
 	Long: `Directly route a video input to an output without needing Discord.
-Supports configured aliases (e.g. 'screena', 'laptop') as well as numeric port IDs.
+Supports configured aliases (e.g. 'all', 'screena', 'laptop') as well as numeric port IDs.
 
 Example:
   screenbot switch screena input2
+  screenbot switch all input1
   screenbot switch 1 4`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		rawScreen := args[0]
 		rawInput := args[1]
 
-		outputID, outName, err := cfg.ResolveOutput(rawScreen)
+		outputPorts, outName, err := cfg.ResolveOutputs(rawScreen)
 		if err != nil {
 			return fmt.Errorf("invalid output: %w", err)
 		}
@@ -43,17 +44,30 @@ Example:
 			return fmt.Errorf("failed to create AMX client: %w", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.AMX.Timeout+2*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.AMX.Timeout*time.Duration(len(outputPorts))+2*time.Second)
 		defer cancel()
 
-		fmt.Printf("Routing %s (Port %d) -> %s (Port %d) on %s...\n",
-			inName, inputID, outName, outputID, cfg.AMX.Host)
+		if len(outputPorts) == 1 {
+			fmt.Printf("Routing %s (Port %d) -> %s (Port %d) on %s...\n",
+				inName, inputID, outName, outputPorts[0], cfg.AMX.Host)
 
-		if err := amxClient.SwitchVideo(ctx, outputID, inputID); err != nil {
-			return fmt.Errorf("failed to switch: %w", err)
+			if err := amxClient.SwitchVideo(ctx, outputPorts[0], inputID); err != nil {
+				return fmt.Errorf("failed to switch: %w", err)
+			}
+
+			fmt.Printf("Successfully routed %s to %s!\n", inName, outName)
+		} else {
+			fmt.Printf("Routing %s (Port %d) -> %s (Ports %s) on %s...\n",
+				inName, inputID, outName, cfg.FormatOutputPorts(outputPorts), cfg.AMX.Host)
+
+			for _, port := range outputPorts {
+				if err := amxClient.SwitchVideo(ctx, port, inputID); err != nil {
+					return fmt.Errorf("failed to switch output port %d: %w", port, err)
+				}
+			}
+
+			fmt.Printf("Successfully routed %s to all outputs (%s)!\n", inName, cfg.FormatOutputPorts(outputPorts))
 		}
-
-		fmt.Printf("Successfully routed %s to %s!\n", inName, outName)
 		return nil
 	},
 }

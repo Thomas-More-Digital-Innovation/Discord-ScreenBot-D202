@@ -284,7 +284,7 @@ func (b *Bot) handleVideoCommand(ctx context.Context, data discordgo.Application
 }
 
 func (b *Bot) executeSwitch(ctx context.Context, rawScreen, rawInput string) *discordgo.MessageEmbed {
-	outputID, outName, err := b.cfg.ResolveOutput(rawScreen)
+	outputPorts, outName, err := b.cfg.ResolveOutputs(rawScreen)
 	if err != nil {
 		return &discordgo.MessageEmbed{
 			Title:       "❌ Invalid Screen / Output",
@@ -302,18 +302,27 @@ func (b *Bot) executeSwitch(ctx context.Context, rawScreen, rawInput string) *di
 		}
 	}
 
-	// Send switch command to AMX matrixer
-	err = b.amxClient.SwitchVideo(ctx, outputID, inputID)
-	if err != nil {
-		log.Printf("AMX Switch error: %v", err)
-		return &discordgo.MessageEmbed{
-			Title:       "⚠️ AMX Switcher Error",
-			Description: fmt.Sprintf("Failed to route video on AMX matrixer:\n```\n%s\n```", err.Error()),
-			Color:       0xe74c3c,
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: fmt.Sprintf("Target: %s", b.amxClient.GetHost()),
-			},
+	// Send switch command to AMX matrixer for each targeted output port
+	for _, port := range outputPorts {
+		err = b.amxClient.SwitchVideo(ctx, port, inputID)
+		if err != nil {
+			log.Printf("AMX Switch error on output %d: %v", port, err)
+			return &discordgo.MessageEmbed{
+				Title:       "⚠️ AMX Switcher Error",
+				Description: fmt.Sprintf("Failed to route video to output port %d on AMX matrixer:\n```\n%s\n```", port, err.Error()),
+				Color:       0xe74c3c,
+				Footer: &discordgo.MessageEmbedFooter{
+					Text: fmt.Sprintf("Target: %s", b.amxClient.GetHost()),
+				},
+			}
 		}
+	}
+
+	var targetValue string
+	if len(outputPorts) == 1 {
+		targetValue = fmt.Sprintf("**%s** (Port %d)", outName, outputPorts[0])
+	} else {
+		targetValue = fmt.Sprintf("**%s** (Ports %s)", outName, b.cfg.FormatOutputPorts(outputPorts))
 	}
 
 	return &discordgo.MessageEmbed{
@@ -323,7 +332,7 @@ func (b *Bot) executeSwitch(ctx context.Context, rawScreen, rawInput string) *di
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Target Screen (Output)",
-				Value:  fmt.Sprintf("**%s** (Port %d)", outName, outputID),
+				Value:  targetValue,
 				Inline: true,
 			},
 			{
@@ -345,7 +354,12 @@ func (b *Bot) handleScreensCommand() *discordgo.MessageEmbed {
 
 	var outLines []string
 	for _, name := range outNames {
-		outLines = append(outLines, fmt.Sprintf("• `%s` → Output Port %d", name, b.cfg.Mapping.Outputs[name]))
+		if b.cfg.IsAllOutput(name) {
+			allPorts := b.cfg.GetAllOutputPorts()
+			outLines = append(outLines, fmt.Sprintf("• `%s` → All Output Ports (%s)", name, b.cfg.FormatOutputPorts(allPorts)))
+		} else {
+			outLines = append(outLines, fmt.Sprintf("• `%s` → Output Port %d", name, b.cfg.Mapping.Outputs[name]))
+		}
 	}
 
 	var inLines []string

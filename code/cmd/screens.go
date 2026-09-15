@@ -14,7 +14,12 @@ var screensCmd = &cobra.Command{
 
 		fmt.Println("Configured Outputs (Screens):")
 		for _, name := range cfg.GetOutputNames() {
-			fmt.Printf("  • %-15s -> Output Port %d\n", name, cfg.Mapping.Outputs[name])
+			if cfg.IsAllOutput(name) {
+				allPorts := cfg.GetAllOutputPorts()
+				fmt.Printf("  • %-15s -> All Output Ports (%s)\n", name, cfg.FormatOutputPorts(allPorts))
+			} else {
+				fmt.Printf("  • %-15s -> Output Port %d\n", name, cfg.Mapping.Outputs[name])
+			}
 		}
 
 		fmt.Println("\nConfigured Inputs (Sources):")

@@ -7,12 +7,12 @@ A Discord bot and CLI utility written in Go (using [Cobra](https://github.com/sp
 ## Features
 
 - **Discord Slash Commands**:
-  - `/video screen:<output> input:<source>`: Route any video source to a screen output with interactive choices.
+  - `/video screen:<output> input:<source>`: Route any video source to a screen output with interactive choices (including `all` to route to all screens simultaneously).
   - `/screens`: Display all configured outputs and inputs along with their hardware port mappings.
   - `/ping`: Check connectivity and response latency to both Discord Gateway and the AMX matrix switcher.
-- **Friendly Aliasing**: Route video using custom aliases (e.g. `screena`, `screenb`, `laptop`, `pc`, `appletv`) or direct port numbers (e.g. `1`, `2`, `4`).
+- **Friendly Aliasing**: Route video using custom aliases (e.g. `all`, `screena`, `screenb`, `laptop`, `pc`, `appletv`) or direct port numbers (e.g. `1`, `2`, `4`).
 - **CLI Management**:
-  - `screenbot switch <screen> <input>`: Switch inputs directly from the terminal without Discord.
+  - `screenbot switch <screen> <input>`: Switch inputs directly from the terminal without Discord (e.g. `screenbot switch all input1`).
   - `screenbot screens`: Inspect configured input and output mappings.
   - `screenbot ping`: Test network connection to the AMX matrixer.
   - `screenbot run`: Start the Discord bot daemon.

@@ -33,7 +33,9 @@ amx:
 
 mapping:
   # Outputs: friendly alias -> AMX matrix output port (1..4)
+  # Use port 0 or 'all' to route to all configured outputs simultaneously
   outputs:
+    all: 0
     output1: 1
     output2: 2
     output3: 3

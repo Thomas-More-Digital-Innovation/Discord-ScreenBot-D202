@@ -21,6 +21,9 @@ func TestResolveOutput(t *testing.T) {
 		{"1", 1, false},
 		{"output3", 3, false},
 		{"out4", 4, false},
+		{"all", 0, false},
+		{"All", 0, false},
+		{"all-screens", 0, false},
 		{"", 0, true},
 		{"nonexistent_screen_xyz", 0, true},
 	}
@@ -36,6 +39,58 @@ func TestResolveOutput(t *testing.T) {
 		if !tc.expectError && id != tc.expectedID {
 			t.Errorf("ResolveOutput(%q) expected %d, got %d", tc.input, tc.expectedID, id)
 		}
+	}
+}
+
+func TestResolveOutputs(t *testing.T) {
+	cfg := DefaultConfig()
+
+	// "all" should return all configured ports [1, 2, 3, 4]
+	ports, name, err := cfg.ResolveOutputs("all")
+	if err != nil {
+		t.Fatalf("ResolveOutputs('all') unexpected error: %v", err)
+	}
+	if name != "All Outputs" {
+		t.Errorf("expected name 'All Outputs', got %q", name)
+	}
+	expectedPorts := []int{1, 2, 3, 4}
+	if len(ports) != len(expectedPorts) {
+		t.Fatalf("expected %d ports, got %d", len(expectedPorts), len(ports))
+	}
+	for i, p := range ports {
+		if p != expectedPorts[i] {
+			t.Errorf("expected port %d, got %d", expectedPorts[i], p)
+		}
+	}
+
+	// Single output resolution
+	ports, name, err = cfg.ResolveOutputs("screena")
+	if err != nil {
+		t.Fatalf("ResolveOutputs('screena') unexpected error: %v", err)
+	}
+	if len(ports) != 1 || ports[0] != 1 {
+		t.Errorf("expected [1], got %v", ports)
+	}
+	if name != "screena" {
+		t.Errorf("expected 'screena', got %q", name)
+	}
+}
+
+func TestGetOutputChoices(t *testing.T) {
+	cfg := DefaultConfig()
+	choices := cfg.GetOutputChoices()
+
+	hasAll := false
+	for _, c := range choices {
+		if c.Value == "all" {
+			hasAll = true
+			if c.Name != "all (All Ports: 1, 2, 3, 4)" {
+				t.Errorf("unexpected choice name for all: %q", c.Name)
+			}
+		}
+	}
+	if !hasAll {
+		t.Error("expected 'all' to be in GetOutputChoices()")
 	}
 }
 
